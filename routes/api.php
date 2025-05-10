@@ -5,16 +5,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApiProductoController;
 use App\Http\Controllers\Api\ApiCategoriaController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Aquí es donde puedes registrar las rutas API para tu aplicación.
-| Estas rutas son cargadas por el RouteServiceProvider dentro de un grupo
-| que tiene asignado el middleware "api".
-|
-*/
 
 // Rutas públicas (sin autenticación)
 Route::prefix('v1')->group(function () {
