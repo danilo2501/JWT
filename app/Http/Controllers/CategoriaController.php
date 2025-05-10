@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CategoriaController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @return \Illuminate\View\View
      */
     public function index()
     {
@@ -16,12 +19,15 @@ class CategoriaController extends Controller
             $categorias = Categoria::orderBy('nombre')->get();
             return view('categorias.index', compact('categorias'));
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al cargar las categorías: ' . $e->getMessage());
+            return redirect()->route('categorias.index')
+                           ->with('error', 'Error al cargar las categorías. Por favor intente nuevamente.');
         }
     }
 
     /**
      * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\View\View
      */
     public function create()
     {
@@ -30,26 +36,37 @@ class CategoriaController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string'
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255|unique:categorias,nombre',
+            'descripcion' => 'nullable|string|max:500'
         ]);
 
+        DB::beginTransaction();
+        
         try {
-            Categoria::create($request->all());
+            Categoria::create($validatedData);
+            DB::commit();
+            
             return redirect()->route('categorias.index')
                             ->with('success', 'Categoría creada exitosamente');
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->withInput()
-                         ->with('error', 'Error al crear categoría: ' . $e->getMessage());
+                        ->with('error', 'No se pudo crear la categoría. Error: ' . $e->getMessage());
         }
     }
 
     /**
      * Display the specified resource.
+     *
+     * @param  \App\Models\Categoria  $categoria
+     * @return \Illuminate\View\View
      */
     public function show(Categoria $categoria)
     {
@@ -58,6 +75,9 @@ class CategoriaController extends Controller
 
     /**
      * Show the form for editing the specified resource.
+     *
+     * @param  \App\Models\Categoria  $categoria
+     * @return \Illuminate\View\View
      */
     public function edit(Categoria $categoria)
     {
@@ -66,35 +86,52 @@ class CategoriaController extends Controller
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Categoria  $categoria
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, Categoria $categoria)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string'
+        $validatedData = $request->validate([
+            'nombre' => 'required|string|max:255|unique:categorias,nombre,'.$categoria->id,
+            'descripcion' => 'nullable|string|max:500'
         ]);
 
+        DB::beginTransaction();
+        
         try {
-            $categoria->update($request->all());
+            $categoria->update($validatedData);
+            DB::commit();
+            
             return redirect()->route('categorias.index')
-                            ->with('success', 'Categoría actualizada exitosamente');
+                           ->with('success', 'Categoría actualizada exitosamente');
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->withInput()
-                         ->with('error', 'Error al actualizar: ' . $e->getMessage());
+                       ->with('error', 'No se pudo actualizar la categoría. Error: ' . $e->getMessage());
         }
     }
 
     /**
      * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\Categoria  $categoria
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Categoria $categoria)
     {
+        DB::beginTransaction();
+        
         try {
             $categoria->delete();
+            DB::commit();
+            
             return redirect()->route('categorias.index')
-                            ->with('success', 'Categoría eliminada exitosamente');
+                           ->with('success', 'Categoría eliminada exitosamente');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al eliminar: ' . $e->getMessage());
+            DB::rollBack();
+            return back()->with('error', 'No se pudo eliminar la categoría. Error: ' . $e->getMessage());
         }
     }
 }
